@@ -1,11 +1,18 @@
-// Clean-Sharpe launch sniper for the Pump.fun Sharpe Sprint (agent-fun/replay/v2).
-// The grader runs `node /bot/main.ts`; the strategy lives in strategy.ts and the SDK
-// shim is the kit's sdk/ts/makefun-bot.ts, vendored byte for byte as vendor/makefun-bot.ts.
-// Paper trading only: buys new pump.fun curves in their first few slots when the opening
-// tape passes the rug filters, exits on asymmetric take-profit / stop-loss with a trailing
-// stop, and paces tiny probe round trips so the run clears the 20-coin guardrail.
+// Pump.fun Sharpe Sprint — cleanest paper bot wins.
+//
+// Entrypoint: wires the strategy in strategy.ts into the kit's
+// agent-fun/replay/v2 shim (vendor/makefun-bot.ts). The bot trades paper
+// money on a 6-hour pump.fun forward replay; places go by hourly Sharpe
+// ratio, so the strategy buys only clean fresh launches, sizes small, and
+// exits mechanically. See strategy.ts for the full behaviour.
 
 import { runBot } from './vendor/makefun-bot.ts';
 import { createStrategy, DEFAULT_PARAMS } from './strategy.ts';
 
-await runBot(createStrategy(DEFAULT_PARAMS));
+const strategy = createStrategy(DEFAULT_PARAMS);
+
+await runBot({
+  onBatch(state, batch) {
+    return strategy.onBatch(state, batch);
+  },
+});
